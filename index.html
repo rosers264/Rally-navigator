@@ -1,42 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ea580c">
-
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Rally Cockpit">
-  
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dakar Rally Roadbook & Telemetry Cockpit</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- PDF.js via reliable Cloudflare CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-  <!-- Google Fonts: JetBrains Mono & Chakra Petch for rugged rally instrumentation -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
-
-  <style>
-    :root {
-      --bg-app: #e2e8f0;
-      --bg-panel: #f8fafc;
-      --bg-instrument: #0f172a;
-      --border-instrument: #334155;
-      --text-primary: #0f172a;
-      --text-muted: #475569;
-      --accent-rally: #ea580c;
-      --accent-rally-hover: #c2410c;
-      --digit-speed: #ffffff;
-      --digit-cap: #fbbf24;
+<!-- ... existing code ... -->
       --digit-time: #38bdf8;
       --digit-chrono: #4ade80;
+      --digit-trip1: #f8fafc;
+      --digit-trip2: #fb923c;
       --roadbook-bg: #cbd5e1;
       --sightline-color: rgba(239, 68, 68, 0.85);
     }
@@ -54,80 +20,21 @@
       --digit-cap: #facc15;
       --digit-time: #38bdf8;
       --digit-chrono: #22c55e;
+      --digit-trip1: #f8fafc;
+      --digit-trip2: #fb923c;
       --roadbook-bg: #18181b;
       --sightline-color: rgba(249, 115, 22, 0.9);
     }
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: var(--bg-app);
-      color: var(--text-primary);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      height: 100dvh;
-      width: 100vw;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .font-instrument {
-      font-family: 'JetBrains Mono', monospace;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.03em;
-    }
-
-    .font-rally-title {
-      font-family: 'Chakra Petch', sans-serif;
-    }
-
-    /* Tactile rugged motorsport buttons */
-    .rally-btn {
-      transition: transform 0.06s ease, filter 0.1s ease, background-color 0.12s ease;
-      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
-      touch-action: manipulation;
-    }
-    .rally-btn:active, .rally-btn.is-pressed {
-      transform: translateY(2px);
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-      filter: brightness(1.1);
-    }
-
-    /* Custom clean scrollbar for roadbook */
-    #roadbook-scroll-container {
-      scroll-behavior: auto;
-      overflow-y: auto;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      background-color: var(--roadbook-bg);
-    }
-    #roadbook-scroll-container::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    #roadbook-scroll-container::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.15);
-    }
-    #roadbook-scroll-container::-webkit-scrollbar-thumb {
-      background: rgba(100,116,139,0.6);
-      border-radius: 4px;
-    }
-
+<!-- ... existing code ... -->
     /* Landscape layout adaptation for phones/tablets */
-    @media (orientation: landscape) and (max-height: 620px) {
+    @media (orientation: landscape) and (max-height: 680px) {
       #cockpit-root {
         flex-direction: row !important;
       }
       #telemetry-sidebar {
-        width: 340px !important;
-        min-width: 320px !important;
-        max-width: 38vw !important;
+        width: 375px !important;
+        min-width: 340px !important;
+        max-width: 42vw !important;
         height: 100dvh !important;
         border-right: 2px solid var(--border-instrument);
         border-bottom: none !important;
@@ -142,9 +49,11 @@
 </head>
   
 <script>
-if ("serviceWorker" in navigator) {
+// Only register the Service Worker when served over standard HTTP/HTTPS origins (prevents blob: URL errors in previews)
+if ("serviceWorker" in navigator && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
   navigator.serviceWorker.register("./sw.js")
-    .then(() => console.log("Service Worker Registered"));
+    .then(() => console.log("Service Worker Registered"))
+    .catch((err) => console.warn("Service Worker registration skipped:", err));
 }
 </script>
   
@@ -154,7 +63,7 @@ if ("serviceWorker" in navigator) {
   <div id="cockpit-root" class="flex flex-col w-full h-full overflow-hidden">
 
     <!-- TELEMETRY & CHRONO INSTRUMENT CLUSTER -->
-    <header id="telemetry-sidebar" class="shrink-0 bg-[var(--bg-panel)] border-b-2 border-[var(--border-instrument)] p-2 sm:p-3 flex flex-col gap-2 z-20 shadow-md">
+    <header id="telemetry-sidebar" class="shrink-0 bg-[var(--bg-panel)] border-b-2 border-[var(--border-instrument)] p-2 sm:p-2.5 flex flex-col gap-2 z-20 shadow-md">
 
       <!-- Top Status Strip: Brand, GPS Status Pill, Time, Settings -->
       <div class="flex items-center justify-between gap-2">
@@ -187,310 +96,144 @@ if ("serviceWorker" in navigator) {
       <!-- Primary Telemetry Readouts: SPEED & CAP HEADING -->
       <div class="grid grid-cols-2 gap-2">
         <!-- GPS SPEED -->
-        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 sm:py-2 flex flex-col justify-between relative overflow-hidden">
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 flex flex-col justify-between relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">SPEED</span>
-            <span id="speed-unit-badge" class="text-[11px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-slate-800 text-orange-400">KM/H</span>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">SPEED</span>
+            <span id="speed-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-slate-800 text-orange-400">KM/H</span>
           </div>
-          <div class="flex items-baseline justify-end my-0.5">
-            <span id="gps-speed-display" class="font-instrument text-4xl sm:text-5xl font-extrabold leading-none text-[var(--digit-speed)]">0</span>
+          <div class="flex items-baseline justify-end">
+            <span id="gps-speed-display" class="font-instrument text-3xl sm:text-4xl font-extrabold leading-none text-[var(--digit-speed)]">0</span>
           </div>
         </div>
 
         <!-- GPS HEADING (CAP) -->
-        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 sm:py-2 flex flex-col justify-between relative overflow-hidden">
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 flex flex-col justify-between relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">CAP / HDG</span>
-            <span id="gps-cardinal-badge" class="text-[11px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">N</span>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">CAP / HDG</span>
+            <span id="gps-cardinal-badge" class="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">N</span>
+          </div>
+          <div class="flex items-baseline justify-end">
+            <span id="gps-heading-display" class="font-instrument text-3xl sm:text-4xl font-extrabold leading-none text-[var(--digit-cap)]">000°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DUAL RESETTABLE RALLY DISTANCE METERS: TRIP 1 (TOTAL) & TRIP 2 (PARTIAL) -->
+      <div class="grid grid-cols-2 gap-2">
+        <!-- TRIP 1: TOTAL STAGE ODOMETER -->
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl p-2 flex flex-col justify-between gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">TRIP 1 • TOTAL</span>
+            <span id="trip1-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 rounded bg-slate-800 text-sky-400">KM</span>
           </div>
           <div class="flex items-baseline justify-end my-0.5">
-            <span id="gps-heading-display" class="font-instrument text-4xl sm:text-5xl font-extrabold leading-none text-[var(--digit-cap)]">000°</span>
+            <span id="trip1-display" class="font-instrument text-2xl sm:text-3xl font-extrabold leading-none text-[var(--digit-trip1)]">000.00</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1 pt-0.5">
+            <button onclick="adjustTrip(1, -0.01)" aria-label="Trip 1 Minus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              -.01
+            </button>
+            <button onclick="adjustTrip(1, 0.01)" aria-label="Trip 1 Plus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              +.01
+            </button>
+            <button onclick="resetTrip(1)" aria-label="Reset Trip 1 Total" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider py-2 rounded-lg">
+              RST
+            </button>
+          </div>
+        </div>
+
+        <!-- TRIP 2: PARTIAL WAYPOINT ODOMETER -->
+        <div class="bg-[var(--bg-instrument)] border-2 border-orange-500/60 rounded-xl p-2 flex flex-col justify-between gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-orange-400">TRIP 2 • PARTIAL</span>
+            <span id="trip2-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40">KM</span>
+          </div>
+          <div class="flex items-baseline justify-end my-0.5">
+            <span id="trip2-display" class="font-instrument text-2xl sm:text-3xl font-extrabold leading-none text-[var(--digit-trip2)]">000.00</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1 pt-0.5">
+            <button onclick="adjustTrip(2, -0.01)" aria-label="Trip 2 Minus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-orange-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              -.01
+            </button>
+            <button onclick="adjustTrip(2, 0.01)" aria-label="Trip 2 Plus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-orange-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              +.01
+            </button>
+            <button onclick="resetTrip(2)" aria-label="Reset Trip 2 Partial" class="rally-btn bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs uppercase tracking-wider py-2 rounded-lg">
+              RST
+            </button>
           </div>
         </div>
       </div>
 
       <!-- RESETTABLE STAGE CHRONO / TIMER WITH -1s / +1s -->
-      <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl p-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2">
         <!-- Timer Display -->
-        <div class="flex flex-col pl-1">
+        <div class="flex flex-col pl-0.5">
           <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">STAGE CHRONO</span>
-          <span id="chrono-display" class="font-instrument text-2xl sm:text-3xl font-extrabold text-[var(--digit-chrono)] leading-tight">00:00:00</span>
+          <span id="chrono-display" class="font-instrument text-xl sm:text-2xl font-extrabold text-[var(--digit-chrono)] leading-tight">00:00:00</span>
         </div>
 
         <!-- Chrono Controls: -1s, +1s, Start/Pause, Reset -->
-        <div class="flex items-center gap-1.5 sm:gap-2 ml-auto">
-          <button onclick="adjustChrono(-1)" aria-label="Subtract 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-sm sm:text-base px-2.5 py-2.5 rounded-lg min-w-[46px]">
+        <div class="flex items-center gap-1.5 ml-auto">
+          <button onclick="adjustChrono(-1)" aria-label="Subtract 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-xs sm:text-sm px-2.5 py-2 rounded-lg min-w-[42px]">
             -1s
           </button>
-          <button onclick="adjustChrono(1)" aria-label="Add 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-sm sm:text-base px-2.5 py-2.5 rounded-lg min-w-[46px]">
+          <button onclick="adjustChrono(1)" aria-label="Add 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-xs sm:text-sm px-2.5 py-2 rounded-lg min-w-[42px]">
             +1s
           </button>
-          <button id="chrono-toggle-btn" onclick="toggleChrono()" class="rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]">
+          <button id="chrono-toggle-btn" onclick="toggleChrono()" class="rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg min-w-[62px]">
             START
           </button>
-          <button onclick="resetChrono()" aria-label="Reset Timer" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-2.5 py-2.5 rounded-lg">
+          <button onclick="resetChrono()" aria-label="Reset Timer" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg">
             RST
           </button>
         </div>
       </div>
 
     </header>
-
-    <!-- ROADBOOK PDF VIEWER WORKSPACE -->
-    <main id="roadbook-workspace" class="flex-1 flex flex-col min-h-0 relative overflow-hidden">
-
-      <!-- Roadbook Sub-toolbar (File Info, Zoom, Page Indicator) -->
-      <div class="shrink-0 bg-[var(--bg-panel)] border-b border-[var(--border-instrument)] px-3 py-1.5 flex items-center justify-between gap-2 text-xs z-10">
-        <div class="flex items-center gap-2 min-w-0">
-          <button onclick="document.getElementById('quick-pdf-input').click()" class="px-2 py-1 rounded bg-orange-600/15 text-orange-600 dark:text-orange-400 border border-orange-500/30 font-bold hover:bg-orange-600/25 shrink-0">
-            OPEN PDF
-          </button>
-          <input id="quick-pdf-input" type="file" accept=".pdf,application/pdf" class="hidden" onchange="handlePdfFileUpload(event)" />
-          <span id="roadbook-filename" class="font-semibold truncate text-[var(--text-muted)]">STAGE_04_EMPTY_QUARTER.pdf</span>
-        </div>
-
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button onclick="changeZoom(-0.15)" class="px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 font-bold text-sm leading-none" title="Zoom Out">-</button>
-          <span id="zoom-level-label" class="font-instrument font-bold w-11 text-center">100%</span>
-          <button onclick="changeZoom(0.15)" class="px-2 py-1 rounded bg-slate-200 dark:bg-slate-800 font-bold text-sm leading-none" title="Zoom In">+</button>
-          <span id="page-indicator" class="ml-1 font-instrument font-bold px-2 py-0.5 rounded bg-slate-900 text-white">P.1/1</span>
-        </div>
-      </div>
-
-      <!-- Scrollable Roadbook Canvas Area -->
-      <div class="flex-1 relative min-h-0 flex flex-col">
-
-        <!-- Center Sightline / Tulip Reading Wire Overlay -->
-        <div id="sightline-overlay" class="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-10 flex items-center justify-between px-1">
-          <div class="w-0 h-0 border-y-[10px] border-y-transparent border-l-[14px] border-l-red-600 drop-shadow"></div>
-          <div class="flex-1 h-[3px] bg-red-600/80 shadow-[0_0_8px_rgba(239,68,68,0.85)]"></div>
-          <div class="w-0 h-0 border-y-[10px] border-y-transparent border-r-[14px] border-r-red-600 drop-shadow"></div>
-        </div>
-
-        <!-- Scroll Container holding rendered PDF pages -->
-        <div id="roadbook-scroll-container" class="flex-1 w-full h-full p-2 sm:p-4 flex flex-col items-center gap-4">
-          <div id="pdf-pages-wrapper" class="flex flex-col items-center gap-3 w-full">
-            <!-- Rendered PDF page canvases appear here -->
-          </div>
-        </div>
-
-        <!-- Loading Indicator Overlay -->
-        <div id="pdf-loading-overlay" class="hidden absolute inset-0 bg-slate-950/75 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-white gap-3">
-          <div class="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          <span class="font-rally-title font-bold tracking-wider uppercase text-sm">Rendering Roadbook Sheets...</span>
-        </div>
-      </div>
-
-      <!-- GLOVE-FRIENDLY BOTTOM ROADBOOK SCROLL CONTROLS -->
-      <footer class="shrink-0 bg-[var(--bg-panel)] border-t-2 border-[var(--border-instrument)] p-2 sm:p-2.5 grid grid-cols-2 gap-2.5 z-20">
-        <button id="btn-scroll-up"
-          class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-orange-600 text-white border-2 border-slate-600 rounded-xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-2.5 font-rally-title font-bold text-lg sm:text-xl tracking-wider uppercase shadow-lg">
-          <svg class="w-7 h-7 text-orange-400 shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
-          </svg>
-          <span>SCROLL UP</span>
-        </button>
-
-        <button id="btn-scroll-down"
-          class="rally-btn bg-orange-600 hover:bg-orange-500 active:bg-orange-700 text-white border-2 border-orange-400 rounded-xl py-3.5 sm:py-4 px-4 flex items-center justify-center gap-2.5 font-rally-title font-bold text-lg sm:text-xl tracking-wider uppercase shadow-lg">
-          <span>SCROLL DOWN</span>
-          <svg class="w-7 h-7 text-white shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </footer>
-
-    </main>
-  </div>
-
-  <!-- TOAST NOTIFICATION BANNER (Replaces alert) -->
-  <div id="rally-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 border-2 border-orange-500 text-white px-4 py-2.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 max-w-[92vw]">
-    <span class="w-2.5 h-2.5 rounded-full bg-orange-500 shrink-0"></span>
-    <span id="rally-toast-msg">Notification</span>
-  </div>
-
-  <!-- SETTINGS MODAL / DRAWER -->
-  <div id="settings-modal" class="fixed inset-0 z-40 hidden bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-    <div class="bg-[var(--bg-panel)] text-[var(--text-primary)] border-2 border-[var(--border-instrument)] rounded-2xl w-full max-w-lg max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden">
-
-      <!-- Modal Header -->
-      <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-700 shrink-0">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span>
-          <h2 class="font-rally-title font-bold text-lg tracking-wider uppercase">RALLY COCKPIT SETTINGS</h2>
-        </div>
-        <button onclick="closeSettings()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold">
-          DONE
-        </button>
-      </div>
-
-      <!-- Modal Scrollable Body -->
-      <div class="p-4 overflow-y-auto space-y-5 text-sm">
-
-        <!-- SECTION 1: GPS SOURCE CONFIGURATION -->
-        <section class="space-y-2.5">
-          <h3 class="font-rally-title font-bold uppercase tracking-wider text-xs text-orange-500">1. GPS Telemetry Source</h3>
-
-          <div class="grid grid-cols-3 gap-2">
-            <button id="src-btn-internal" onclick="setGpsSource('internal')" class="py-2.5 px-2 rounded-xl border-2 font-bold text-xs text-center transition">
-              Phone GPS
-            </button>
-            <button id="src-btn-serial" onclick="setGpsSource('serial')" class="py-2.5 px-2 rounded-xl border-2 font-bold text-xs text-center transition">
-              Serial Port
-            </button>
-            <button id="src-btn-demo" onclick="setGpsSource('demo')" class="py-2.5 px-2 rounded-xl border-2 font-bold text-xs text-center transition">
-              Demo / Sim
-            </button>
-          </div>
-
+<!-- ... existing code ... -->
           <!-- Internal GPS Info Box -->
           <div id="panel-internal-gps" class="p-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 space-y-1">
             <div class="flex items-center justify-between">
               <span class="font-bold">Internal GNSS Receiver</span>
               <span id="internal-gps-state" class="text-xs font-instrument px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>
             </div>
-            <p class="text-xs text-[var(--text-muted)]">Uses device high-accuracy GPS (`watchPosition`) for live ground speed, true heading (CAP), and UTC sync.</p>
+            <p class="text-xs text-[var(--text-muted)]">Uses device high-accuracy GPS (`watchPosition`) for live ground speed, true heading (CAP), distance odometers, and UTC sync.</p>
           </div>
-
-          <!-- External Serial Port GPS Box -->
-          <div id="panel-serial-gps" class="hidden p-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <label for="serial-baud-select" class="font-bold text-xs uppercase">Baud Rate</label>
-              <select id="serial-baud-select" class="bg-white dark:bg-slate-800 border border-slate-400 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-instrument font-bold text-xs">
-                <option value="4800">4800 bps (NMEA Std)</option>
-                <option value="9600" selected>9600 bps (Default)</option>
-                <option value="19200">19200 bps</option>
-                <option value="38400">38400 bps (High Rate)</option>
-                <option value="57600">57600 bps</option>
-                <option value="115200">115200 bps (10Hz+ GNSS)</option>
-              </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <button id="serial-connect-btn" onclick="connectSerialGps()" class="flex-1 py-2.5 px-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs uppercase tracking-wider">
-                Select & Connect Serial GPS
-              </button>
-              <button id="serial-disconnect-btn" onclick="disconnectSerialGps()" class="hidden py-2.5 px-3 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs uppercase">
-                Disconnect
-              </button>
-            </div>
-
-            <div class="text-xs font-instrument bg-black/90 text-emerald-400 p-2 rounded-lg overflow-x-auto whitespace-nowrap">
-              <span class="text-slate-400">NMEA:</span> <span id="nmea-debug-line">Waiting for serial port...</span>
-            </div>
-          </div>
-
+<!-- ... existing code ... -->
           <!-- Demo GPS Info Box -->
           <div id="panel-demo-gps" class="hidden p-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 space-y-1">
             <div class="flex items-center justify-between">
               <span class="font-bold">Simulated Desert Rally Stage</span>
               <span class="text-xs font-instrument px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold">SIMULATING</span>
             </div>
-            <p class="text-xs text-[var(--text-muted)]">Generates realistic variable rally speeds (45–138 km/h), dune CAP headings, and live GPS clock ticks for indoor testing.</p>
+            <p class="text-xs text-[var(--text-muted)]">Generates realistic variable rally speeds (55–134 km/h), dune CAP headings, live distance meter accumulation, and GPS clock ticks.</p>
           </div>
         </section>
-
-        <!-- SECTION 2: PDF ROADBOOK FILE -->
-        <section class="space-y-2.5">
-          <h3 class="font-rally-title font-bold uppercase tracking-wider text-xs text-orange-500">2. Roadbook PDF File</h3>
-
-          <div class="p-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 space-y-2.5">
-            <div class="flex flex-col gap-1">
-              <span class="text-[11px] font-bold uppercase text-[var(--text-muted)]">Loaded File / Path</span>
-              <div id="settings-pdf-path" class="font-instrument text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 px-2.5 py-2 rounded-lg truncate">
-                Built-in Sample: STAGE_04_EMPTY_QUARTER.pdf
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2">
-              <label class="cursor-pointer py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs text-center uppercase tracking-wider">
-                Browse PDF File
-                <input type="file" accept=".pdf,application/pdf" class="hidden" onchange="handlePdfFileUpload(event)" />
-              </label>
-              <button onclick="loadBuiltInSampleRoadbook()" class="py-2.5 px-3 rounded-xl bg-slate-300 dark:bg-slate-800 hover:opacity-90 font-bold text-xs uppercase tracking-wider">
-                Load Sample RB
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- SECTION 3: UNITS, SCROLL STEP & DISPLAY -->
-        <section class="space-y-2.5">
-          <h3 class="font-rally-title font-bold uppercase tracking-wider text-xs text-orange-500">3. Display & Controls</h3>
-
-          <div class="p-3 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 space-y-3">
-
-            <!-- Dark Mode Toggle -->
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="font-bold">Dark Mode (Night Rally)</div>
-                <div class="text-xs text-[var(--text-muted)]">High-contrast OLED dark cockpit theme</div>
-              </div>
-              <button id="toggle-dark-btn" onclick="toggleDarkMode()" class="w-14 h-8 rounded-full bg-slate-400 p-1 transition-colors flex items-center">
-                <span id="toggle-dark-knob" class="w-6 h-6 rounded-full bg-white shadow transform transition-transform"></span>
-              </button>
-            </div>
-
-            <!-- Speed Units Toggle -->
+<!-- ... existing code ... -->
+            <!-- Speed & Distance Units Toggle -->
             <div class="flex items-center justify-between pt-2 border-t border-slate-300 dark:border-slate-800">
               <div>
-                <div class="font-bold">Speed Units</div>
-                <div class="text-xs text-[var(--text-muted)]">Metric (KM/H) or Imperial (MPH)</div>
+                <div class="font-bold">Speed & Distance Units</div>
+                <div class="text-xs text-[var(--text-muted)]">Metric (KM/H, KM) or Imperial (MPH, MI)</div>
               </div>
               <div class="flex rounded-lg overflow-hidden border border-slate-400 dark:border-slate-700 font-instrument font-bold text-xs">
                 <button id="unit-kmh-btn" onclick="setSpeedUnit('kmh')" class="px-3 py-1.5 bg-orange-600 text-white">KM/H</button>
                 <button id="unit-mph-btn" onclick="setSpeedUnit('mph')" class="px-3 py-1.5 bg-transparent">MPH</button>
               </div>
             </div>
-
-            <!-- Sightline Overlay Toggle -->
-            <div class="flex items-center justify-between pt-2 border-t border-slate-300 dark:border-slate-800">
-              <div>
-                <div class="font-bold">Center Reading Sightline</div>
-                <div class="text-xs text-[var(--text-muted)]">Red reference wire across current tulip</div>
-              </div>
-              <button id="toggle-sightline-btn" onclick="toggleSightline()" class="w-14 h-8 rounded-full bg-orange-600 p-1 transition-colors flex items-center">
-                <span id="toggle-sightline-knob" class="w-6 h-6 rounded-full bg-white shadow transform translate-x-6 transition-transform"></span>
-              </button>
-            </div>
-
-            <!-- Scroll Step Distance -->
-            <div class="pt-2 border-t border-slate-300 dark:border-slate-800 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <label for="scroll-step-range" class="font-bold">Button Scroll Step</label>
-                <span id="scroll-step-label" class="font-instrument font-bold text-orange-500">180 px</span>
-              </div>
-              <input id="scroll-step-range" type="range" min="60" max="420" step="20" value="180" oninput="setScrollStep(this.value)" class="w-full accent-orange-600" />
-            </div>
-
-          </div>
-        </section>
-
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // Configure PDF.js worker
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-
-    // =========================================================================
-    // APPLICATION STATE
-    // =========================================================================
-    const state = {
-      gpsSource: 'internal', // 'internal' | 'serial' | 'demo'
-      speedUnit: 'kmh',      // 'kmh' | 'mph'
-      darkMode: false,
-      showSightline: true,
-      scrollStepPx: 180,
-
+<!-- ... existing code ... -->
       // Telemetry values
       speedKmh: 0,
       headingDeg: 0,
       gpsTimeStr: '00:00:00',
       hasGpsFix: false,
+
+      // Dual Resettable Distance Meters (stored internally in kilometers)
+      trip1Km: 0,
+      trip2Km: 0,
+      lastFixLat: null,
+      lastFixLon: null,
 
       // Chrono Timer values
       chronoSeconds: 0,
@@ -508,6 +251,7 @@ if ("serviceWorker" in navigator) {
       // Demo simulation timer
       demoIntervalId: null,
       demoPhase: 0,
+      demoLastTickMs: null,
 
       // PDF Roadbook state
       pdfDoc: null,
@@ -525,6 +269,7 @@ if ("serviceWorker" in navigator) {
       setupScrollHoldButtons();
       setupScrollPageTracker();
       startClockFallbackLoop();
+      updateTelemetryUI();
       setGpsSource(state.gpsSource, true);
       loadBuiltInSampleRoadbook();
     });
@@ -536,6 +281,8 @@ if ("serviceWorker" in navigator) {
         if (saved.speedUnit) setSpeedUnit(saved.speedUnit, false);
         if (typeof saved.showSightline === 'boolean') setSightline(saved.showSightline, false);
         if (saved.scrollStepPx) setScrollStep(saved.scrollStepPx, false);
+        if (typeof saved.trip1Km === 'number' && !isNaN(saved.trip1Km)) state.trip1Km = Math.max(0, saved.trip1Km);
+        if (typeof saved.trip2Km === 'number' && !isNaN(saved.trip2Km)) state.trip2Km = Math.max(0, saved.trip2Km);
         if (saved.gpsSource && saved.gpsSource !== 'serial') {
           state.gpsSource = saved.gpsSource;
         }
@@ -551,33 +298,98 @@ if ("serviceWorker" in navigator) {
           speedUnit: state.speedUnit,
           showSightline: state.showSightline,
           scrollStepPx: state.scrollStepPx,
+          trip1Km: state.trip1Km,
+          trip2Km: state.trip2Km,
           gpsSource: state.gpsSource === 'serial' ? 'internal' : state.gpsSource
         }));
       } catch (e) {
         // Ignore storage errors in restricted contexts
       }
     }
+<!-- ... existing code ... -->
+    // =========================================================================
+    // DISTANCE METERS (TRIP 1 TOTAL & TRIP 2 PARTIAL) + HAVERSINE INTEGRATION
+    // =========================================================================
+    function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371.0088; // Mean Earth radius in km
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
 
-    function showToast(msg) {
-      const toast = document.getElementById('rally-toast');
-      const toastMsg = document.getElementById('rally-toast-msg');
-      toastMsg.textContent = msg;
-      toast.classList.remove('hidden');
-      clearTimeout(toast._hideTimer);
-      toast._hideTimer = setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 3400);
+    // Format distance to 2 decimal places with leading zeros on integer part (e.g., 000.00)
+    function formatTripDistance(value) {
+      const safeVal = Math.max(0, Number.isFinite(value) ? value : 0);
+      const [intPart, decPart] = safeVal.toFixed(2).split('.');
+      return `${intPart.padStart(3, '0')}.${decPart}`;
+    }
+
+    // Integrate new GNSS coordinates into Trip 1 and Trip 2
+    function recordGpsCoordinate(lat, lon, accuracyMeters = 10) {
+      if (typeof lat !== 'number' || typeof lon !== 'number' || isNaN(lat) || isNaN(lon)) return;
+
+      if (state.lastFixLat !== null && state.lastFixLon !== null) {
+        const deltaKm = haversineDistanceKm(state.lastFixLat, state.lastFixLon, lat, lon);
+        // Filter out stationary GPS jitter (< 2 meters) and unrealistic single-tick teleport spikes (> 2 km)
+        const minJitterKm = Math.max(0.002, (accuracyMeters || 5) * 0.00025);
+        if (deltaKm >= minJitterKm && deltaKm < 2.0) {
+          state.trip1Km += deltaKm;
+          state.trip2Km += deltaKm;
+          savePreferences();
+        }
+      }
+
+      state.lastFixLat = lat;
+      state.lastFixLon = lon;
+    }
+
+    // Manual +/- 0.01 (in active display units: KM or MI) for roadbook odometer calibration
+    function adjustTrip(tripNumber, deltaDisplayUnit) {
+      const factorToKm = state.speedUnit === 'mph' ? 1.609344 : 1.0;
+      const deltaKm = deltaDisplayUnit * factorToKm;
+      if (tripNumber === 1) {
+        state.trip1Km = Math.max(0, state.trip1Km + deltaKm);
+      } else {
+        state.trip2Km = Math.max(0, state.trip2Km + deltaKm);
+      }
+      savePreferences();
+      updateTelemetryUI();
+    }
+
+    function resetTrip(tripNumber) {
+      if (tripNumber === 1) {
+        state.trip1Km = 0;
+        showToast('Trip 1 (Total) reset to 000.00');
+      } else {
+        state.trip2Km = 0;
+        showToast('Trip 2 (Partial) reset to 000.00');
+      }
+      savePreferences();
+      updateTelemetryUI();
     }
 
     // =========================================================================
     // TELEMETRY DISPLAY UPDATERS
     // =========================================================================
     function updateTelemetryUI() {
+      const isMph = state.speedUnit === 'mph';
+
       // Speed conversion
-      const displaySpeed = state.speedUnit === 'mph'
+      const displaySpeed = isMph
         ? Math.round(state.speedKmh * 0.621371)
         : Math.round(state.speedKmh);
       document.getElementById('gps-speed-display').textContent = displaySpeed;
+
+      // Trip 1 (Total) & Trip 2 (Partial) conversion
+      const distFactor = isMph ? 0.621371 : 1.0;
+      document.getElementById('trip1-display').textContent = formatTripDistance(state.trip1Km * distFactor);
+      document.getElementById('trip2-display').textContent = formatTripDistance(state.trip2Km * distFactor);
 
       // Heading (CAP) formatted as 000° - 359°
       const normHeading = ((Math.round(state.headingDeg) % 360) + 360) % 360;
@@ -588,85 +400,20 @@ if ("serviceWorker" in navigator) {
       // GPS Time
       document.getElementById('gps-time-display').textContent = state.gpsTimeStr;
     }
-
-    function getCardinalDirection(deg) {
-      const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-      const idx = Math.round(deg / 22.5) % 16;
-      return dirs[idx];
-    }
-
-    function updateGpsStatusBadge(label, statusColorClass) {
-      document.getElementById('gps-source-label').textContent = label;
-      const led = document.getElementById('gps-led');
-      led.className = `w-2.5 h-2.5 rounded-full shrink-0 ${statusColorClass}`;
-    }
-
-    // System UTC/Local fallback clock when GPS fix hasn't supplied a timestamp yet
-    function startClockFallbackLoop() {
-      setInterval(() => {
-        if (!state.hasGpsFix && state.gpsSource !== 'demo') {
-          const now = new Date();
-          state.gpsTimeStr = now.toTimeString().slice(0, 8);
-          document.getElementById('gps-time-display').textContent = state.gpsTimeStr;
-        }
-      }, 500);
-    }
-
-    // =========================================================================
-    // GPS SOURCES: INTERNAL PHONE GPS, EXTERNAL SERIAL NMEA, DEMO SIMULATOR
-    // =========================================================================
-    function setGpsSource(source, silent = false) {
-      // Stop existing active feeds
-      stopInternalGps();
-      stopDemoGps();
-      if (source !== 'serial' && state.serialPort) {
-        disconnectSerialGps();
-      }
-
+<!-- ... existing code ... -->
       state.gpsSource = source;
       state.hasGpsFix = false;
+      state.lastFixLat = null;
+      state.lastFixLon = null;
       savePreferences();
-
-      // Update Settings Modal Tabs
-      ['internal', 'serial', 'demo'].forEach(key => {
-        const btn = document.getElementById(`src-btn-${key}`);
-        const panel = document.getElementById(`panel-${key}-gps`);
-        if (key === source) {
-          btn.className = 'py-2.5 px-2 rounded-xl border-2 border-orange-500 bg-orange-600/15 text-orange-600 dark:text-orange-400 font-extrabold text-xs text-center transition';
-          panel.classList.remove('hidden');
-        } else {
-          btn.className = 'py-2.5 px-2 rounded-xl border-2 border-slate-300 dark:border-slate-700 font-bold text-xs text-center opacity-75 transition';
-          panel.classList.add('hidden');
-        }
-      });
-
-      if (source === 'internal') {
-        startInternalGps();
-        if (!silent) showToast('Switched to Internal Phone GPS');
-      } else if (source === 'serial') {
-        updateGpsStatusBadge('SERIAL WAIT', 'bg-amber-400 animate-pulse');
-        if (!silent) showToast('Select Serial Port to connect external GPS');
-      } else if (source === 'demo') {
-        startDemoGps();
-        if (!silent) showToast('Demo Rally Telemetry Active');
-      }
-    }
-
-    // --- 1. Internal Phone Geolocation ---
-    function startInternalGps() {
-      if (!('geolocation' in navigator)) {
-        updateGpsStatusBadge('NO GPS API', 'bg-rose-500');
-        document.getElementById('internal-gps-state').textContent = 'UNSUPPORTED';
-        return;
-      }
-
-      updateGpsStatusBadge('INT SEARCH', 'bg-amber-400 animate-pulse');
-      document.getElementById('internal-gps-state').textContent = 'SEARCHING...';
-
+<!-- ... existing code ... -->
       state.geoWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           state.hasGpsFix = true;
           const coords = pos.coords;
+
+          // Integrate Haversine distance for Trip 1 & Trip 2
+          recordGpsCoordinate(coords.latitude, coords.longitude, coords.accuracy);
 
           // Speed in m/s -> km/h
           if (typeof coords.speed === 'number' && !isNaN(coords.speed) && coords.speed >= 0) {
@@ -674,118 +421,24 @@ if ("serviceWorker" in navigator) {
           } else {
             state.speedKmh = 0;
           }
-
-          // Heading in degrees (0-360)
-          if (typeof coords.heading === 'number' && !isNaN(coords.heading)) {
-            state.headingDeg = coords.heading;
-          }
-
-          // Timestamp from GPS fix
-          const fixDate = new Date(pos.timestamp || Date.now());
-          state.gpsTimeStr = fixDate.toTimeString().slice(0, 8);
-
-          updateGpsStatusBadge('INT 3D FIX', 'bg-emerald-400');
-          document.getElementById('internal-gps-state').textContent = `LOCKED (±${Math.round(coords.accuracy || 0)}m)`;
-          updateTelemetryUI();
-        },
-        (err) => {
-          console.warn('Geolocation error:', err);
-          updateGpsStatusBadge('INT NO FIX', 'bg-rose-500');
-          document.getElementById('internal-gps-state').textContent = err.message || 'PERMISSION DENIED';
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        }
-      );
-    }
-
-    function stopInternalGps() {
-      if (state.geoWatchId !== null && 'geolocation' in navigator) {
-        navigator.geolocation.clearWatch(state.geoWatchId);
-        state.geoWatchId = null;
-      }
-    }
-
-    // --- 2. External Web Serial NMEA GPS ---
-    async function connectSerialGps() {
-      if (!('serial' in navigator)) {
-        showToast('Web Serial API not supported in this browser. Use Chrome/Edge on Android or Desktop.');
-        return;
-      }
-
-      try {
-        const baudRate = parseInt(document.getElementById('serial-baud-select').value, 10) || 9600;
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate });
-
+<!-- ... existing code ... -->
         state.serialPort = port;
         state.serialKeepReading = true;
+        state.lastFixLat = null;
+        state.lastFixLon = null;
 
         document.getElementById('serial-connect-btn').classList.add('hidden');
-        document.getElementById('serial-disconnect-btn').classList.remove('hidden');
-        updateGpsStatusBadge(`SER ${baudRate}`, 'bg-emerald-400');
-        showToast(`Serial GPS connected @ ${baudRate} baud`);
-
-        readSerialLoop();
-      } catch (err) {
-        console.error('Serial connection error:', err);
-        if (err.name !== 'NotFoundError') {
-          showToast('Serial port error: ' + err.message);
-        }
-      }
-    }
-
-    async function readSerialLoop() {
-      const textDecoder = new TextDecoderStream();
-      const readableStreamClosed = state.serialPort.readable.pipeTo(textDecoder.writable);
-      const reader = textDecoder.readable.getReader();
-      state.serialReader = reader;
-
-      let buffer = '';
-      try {
-        while (state.serialKeepReading) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          if (value) {
-            buffer += value;
-            const lines = buffer.split(/\r?\n/);
-            buffer = lines.pop();
-            for (const line of lines) {
-              if (line.startsWith('$')) {
-                parseNmeaSentence(line.trim());
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Serial read interrupted:', err);
-      } finally {
-        reader.releaseLock();
-      }
-    }
-
-    async function disconnectSerialGps() {
-      state.serialKeepReading = false;
-      try {
-        if (state.serialReader) {
-          await state.serialReader.cancel();
-          state.serialReader = null;
-        }
-        if (state.serialPort) {
-          await state.serialPort.close();
-          state.serialPort = null;
-        }
-      } catch (e) {
-        console.warn('Error closing serial port:', e);
-      }
-      document.getElementById('serial-connect-btn').classList.remove('hidden');
-      document.getElementById('serial-disconnect-btn').classList.add('hidden');
-      document.getElementById('nmea-debug-line').textContent = 'Disconnected';
-      if (state.gpsSource === 'serial') {
-        updateGpsStatusBadge('SERIAL OFF', 'bg-rose-500');
-      }
+<!-- ... existing code ... -->
+    // Convert NMEA ddmm.mmmm coordinate to decimal degrees
+    function parseNmeaCoord(rawVal, hemi) {
+      if (!rawVal || !hemi) return null;
+      const val = parseFloat(rawVal);
+      if (isNaN(val)) return null;
+      const degrees = Math.floor(val / 100);
+      const minutes = val - degrees * 100;
+      let decimal = degrees + minutes / 60;
+      if (hemi === 'S' || hemi === 'W') decimal = -decimal;
+      return decimal;
     }
 
     // Parse standard $GPRMC / $GNRMC and $GPVTG / $GNVTG NMEA sentences
@@ -795,7 +448,7 @@ if ("serviceWorker" in navigator) {
       const type = parts[0];
 
       // $GPRMC or $GNRMC: Recommended Minimum Specific GNSS Data
-      // [1]=UTC hhmmss.ss, [2]=Status A/V, [7]=Speed in knots, [8]=Track angle deg
+      // [1]=UTC hhmmss.ss, [2]=Status A/V, [3]=Lat, [4]=N/S, [5]=Lon, [6]=E/W, [7]=Speed knots, [8]=Track deg
       if (type.endsWith('RMC') && parts.length >= 9) {
         const utcRaw = parts[1];
         if (utcRaw && utcRaw.length >= 6) {
@@ -803,6 +456,12 @@ if ("serviceWorker" in navigator) {
         }
         if (parts[2] === 'A') {
           state.hasGpsFix = true;
+          const lat = parseNmeaCoord(parts[3], parts[4]);
+          const lon = parseNmeaCoord(parts[5], parts[6]);
+          if (lat !== null && lon !== null) {
+            recordGpsCoordinate(lat, lon, 5);
+          }
+
           const knots = parseFloat(parts[7]);
           if (!isNaN(knots)) state.speedKmh = knots * 1.852;
           const course = parseFloat(parts[8]);
@@ -811,27 +470,26 @@ if ("serviceWorker" in navigator) {
           updateTelemetryUI();
         }
       }
-
-      // $GPVTG or $GNVTG: Course Over Ground and Ground Speed
-      // [1]=True track deg, [7]=Speed in km/h
-      if (type.endsWith('VTG') && parts.length >= 8) {
-        const course = parseFloat(parts[1]);
-        if (!isNaN(course)) state.headingDeg = course;
-        const kmh = parseFloat(parts[7]);
-        if (!isNaN(kmh)) state.speedKmh = kmh;
-        state.hasGpsFix = true;
-        updateTelemetryUI();
-      }
-    }
-
+<!-- ... existing code ... -->
     // --- 3. Simulated Rally Telemetry Mode ---
     function startDemoGps() {
       updateGpsStatusBadge('DEMO SIM', 'bg-amber-400');
+      state.demoLastTickMs = performance.now();
       state.demoIntervalId = setInterval(() => {
+        const nowMs = performance.now();
+        const dtHours = Math.max(0, (nowMs - state.demoLastTickMs) / 3600000);
+        state.demoLastTickMs = nowMs;
+
         state.demoPhase += 0.12;
         state.hasGpsFix = true;
         // Realistic desert piste speed between 55 and 134 km/h
         state.speedKmh = 94 + Math.sin(state.demoPhase * 0.7) * 32 + Math.cos(state.demoPhase * 1.9) * 8;
+
+        // Integrate simulated distance into both Trip 1 & Trip 2
+        const deltaKm = state.speedKmh * dtHours;
+        state.trip1Km += deltaKm;
+        state.trip2Km += deltaKm;
+
         // Sweeping dune CAP heading around 142° (SE)
         state.headingDeg = (142 + Math.sin(state.demoPhase * 0.45) * 38 + 360) % 360;
         const now = new Date();
@@ -845,567 +503,17 @@ if ("serviceWorker" in navigator) {
         clearInterval(state.demoIntervalId);
         state.demoIntervalId = null;
       }
+      state.demoLastTickMs = null;
+      savePreferences();
     }
-
-    // =========================================================================
-    // RESETTABLE STAGE CHRONO TIMER (+1s / -1s)
-    // =========================================================================
-    function formatChrono(totalSecs) {
-      const clamped = Math.max(0, Math.floor(totalSecs));
-      const hrs = Math.floor(clamped / 3600);
-      const mins = Math.floor((clamped % 3600) / 60);
-      const secs = clamped % 60;
-      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-
-    function renderChrono() {
-      document.getElementById('chrono-display').textContent = formatChrono(state.chronoSeconds);
-    }
-
-    function toggleChrono() {
-      const btn = document.getElementById('chrono-toggle-btn');
-      if (state.chronoRunning) {
-        clearInterval(state.chronoIntervalId);
-        state.chronoIntervalId = null;
-        state.chronoRunning = false;
-        btn.textContent = 'START';
-        btn.className = 'rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]';
-      } else {
-        state.chronoRunning = true;
-        btn.textContent = 'PAUSE';
-        btn.className = 'rally-btn bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]';
-        state.chronoIntervalId = setInterval(() => {
-          state.chronoSeconds += 1;
-          renderChrono();
-        }, 1000);
-      }
-    }
-
-    function adjustChrono(deltaSeconds) {
-      state.chronoSeconds = Math.max(0, state.chronoSeconds + deltaSeconds);
-      renderChrono();
-    }
-
-    function resetChrono() {
-      if (state.chronoRunning) {
-        toggleChrono();
-      }
-      state.chronoSeconds = 0;
-      renderChrono();
-      showToast('Stage Chrono reset to 00:00:00');
-    }
-
-    // =========================================================================
-    // ROADBOOK SCROLL CONTROLS (TAP STEP + PRESS-AND-HOLD SMOOTH SCROLL)
-    // =========================================================================
-    function scrollRoadbookBy(deltaY) {
-      const container = document.getElementById('roadbook-scroll-container');
-      container.scrollBy({
-        top: deltaY,
-        behavior: 'smooth'
-      });
-    }
-
-    function setupScrollHoldButtons() {
-      const upBtn = document.getElementById('btn-scroll-up');
-      const downBtn = document.getElementById('btn-scroll-down');
-      const container = document.getElementById('roadbook-scroll-container');
-
-      const attachHoldBehavior = (btn, direction) => {
-        let holdTimeout = null;
-        let holdRaf = null;
-        let isHolding = false;
-
-        const startPress = (e) => {
-          e.preventDefault();
-          btn.classList.add('is-pressed');
-          isHolding = false;
-
-          // Immediate single step on tap
-          scrollRoadbookBy(direction * state.scrollStepPx);
-
-          // If held longer than 260ms, engage continuous smooth motorized scroll
-          holdTimeout = setTimeout(() => {
-            isHolding = true;
-            const continuousScroll = () => {
-              if (!isHolding) return;
-              container.scrollTop += direction * 9;
-              holdRaf = requestAnimationFrame(continuousScroll);
-            };
-            holdRaf = requestAnimationFrame(continuousScroll);
-          }, 260);
-        };
-
-        const endPress = () => {
-          btn.classList.remove('is-pressed');
-          clearTimeout(holdTimeout);
-          isHolding = false;
-          if (holdRaf) cancelAnimationFrame(holdRaf);
-        };
-
-        btn.addEventListener('pointerdown', startPress);
-        btn.addEventListener('pointerup', endPress);
-        btn.addEventListener('pointerleave', endPress);
-        btn.addEventListener('pointercancel', endPress);
-      };
-
-      attachHoldBehavior(upBtn, -1);
-      attachHoldBehavior(downBtn, 1);
-
-      // Keyboard ArrowUp / ArrowDown support for external Bluetooth handlebar remotes
-      window.addEventListener('keydown', (e) => {
-        if (document.getElementById('settings-modal').classList.contains('hidden')) {
-          if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            scrollRoadbookBy(-state.scrollStepPx);
-          } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            scrollRoadbookBy(state.scrollStepPx);
-          }
-        }
-      });
-    }
-
-    function setupScrollPageTracker() {
-      const container = document.getElementById('roadbook-scroll-container');
-      container.addEventListener('scroll', () => {
-        const canvases = document.querySelectorAll('#pdf-pages-wrapper canvas');
-        if (!canvases.length) return;
-        const containerMid = container.scrollTop + container.clientHeight / 2;
-        let activePage = 1;
-        canvases.forEach((canvas, idx) => {
-          if (canvas.offsetTop <= containerMid) {
-            activePage = idx + 1;
-          }
-        });
-        state.currentPage = activePage;
-        document.getElementById('page-indicator').textContent = `P.${state.currentPage}/${state.totalPages}`;
-      });
-    }
-
-    // =========================================================================
-    // PDF.JS LOADER & RENDERER + BUILT-IN DAKAR SAMPLE ROADBOOK GENERATOR
-    // =========================================================================
-    async function handlePdfFileUpload(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-
-      state.currentFileName = file.name;
-      document.getElementById('roadbook-filename').textContent = file.name;
-      document.getElementById('settings-pdf-path').textContent = file.name;
-
-      const loading = document.getElementById('pdf-loading-overlay');
-      loading.classList.remove('hidden');
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-        state.pdfDoc = await loadingTask.promise;
-        state.totalPages = state.pdfDoc.numPages;
-        state.pdfScale = 1.0;
-        document.getElementById('zoom-level-label').textContent = '100%';
-
-        await renderAllPdfPages();
-        document.getElementById('roadbook-scroll-container').scrollTop = 0;
-        showToast(`Loaded ${file.name} (${state.totalPages} pages)`);
-      } catch (err) {
-        console.error('PDF render error:', err);
-        showToast('Failed to read PDF file. Ensure it is a valid PDF.');
-      } finally {
-        loading.classList.add('hidden');
-        event.target.value = '';
-      }
-    }
-
-    async function renderAllPdfPages() {
-      if (!state.pdfDoc) return;
-      const wrapper = document.getElementById('pdf-pages-wrapper');
-      const container = document.getElementById('roadbook-scroll-container');
-      wrapper.innerHTML = '';
-
-      const availableWidth = Math.max(280, container.clientWidth - 24);
-
-      for (let pageNum = 1; pageNum <= state.pdfDoc.numPages; pageNum++) {
-        const page = await state.pdfDoc.getPage(pageNum);
-        const unscaledViewport = page.getViewport({ scale: 1.0 });
-        const fitScale = (availableWidth / unscaledViewport.width) * state.pdfScale;
-        const viewport = page.getViewport({ scale: fitScale });
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-        canvas.width = Math.floor(viewport.width * dpr);
-        canvas.height = Math.floor(viewport.height * dpr);
-        canvas.style.width = `${Math.floor(viewport.width)}px`;
-        canvas.style.height = `${Math.floor(viewport.height)}px`;
-        canvas.className = 'bg-white shadow-xl rounded-sm border border-slate-400';
-
-        ctx.scale(dpr, dpr);
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        wrapper.appendChild(canvas);
-      }
-
-      document.getElementById('page-indicator').textContent = `P.1/${state.totalPages}`;
-    }
-
-    async function changeZoom(delta) {
-      state.pdfScale = Math.min(2.2, Math.max(0.6, +(state.pdfScale + delta).toFixed(2)));
-      document.getElementById('zoom-level-label').textContent = `${Math.round(state.pdfScale * 100)}%`;
-      if (state.pdfDoc) {
-        await renderAllPdfPages();
-      } else {
-        loadBuiltInSampleRoadbook(true);
-      }
-    }
-
-    // Generates a realistic multi-row FIA/FIM Dakar Rally Roadbook roll out-of-the-box
-    function loadBuiltInSampleRoadbook(preserveScroll = false) {
-      state.pdfDoc = null;
-      state.totalPages = 1;
-      state.currentFileName = 'STAGE_04_EMPTY_QUARTER.pdf';
-      document.getElementById('roadbook-filename').textContent = state.currentFileName;
-      document.getElementById('settings-pdf-path').textContent = 'Built-in Sample: ' + state.currentFileName;
-      document.getElementById('page-indicator').textContent = 'P.1/1';
-
-      const container = document.getElementById('roadbook-scroll-container');
-      const prevScroll = container.scrollTop;
-      const wrapper = document.getElementById('pdf-pages-wrapper');
-      wrapper.innerHTML = '';
-
-      const baseWidth = Math.min(Math.max(300, container.clientWidth - 20), 680);
-      const width = Math.floor(baseWidth * state.pdfScale);
-
-      const waypoints = [
-        { total: '0.00', part: '0.00', cap: '135°', tulip: 'start', notes: 'DSS - START STAGE 04\nPP (Piste Principale) -> SE', danger: '' },
-        { total: '4.25', part: '4.25', cap: '142°', tulip: 'forkRight', notes: 'KP (Keep Piste) / Fork R\n! ATTENTION GRAVEL !', danger: '!' },
-        { total: '11.80', part: '7.55', cap: '168°', tulip: 'wadi', notes: 'CROSS WADI (Oued)\nROCKS IN BED - SLOW', danger: '!!' },
-        { total: '18.40', part: '6.60', cap: '112°', tulip: 'dunes', notes: 'ENTER ERG DUNES L2\nCAP 112° OFF-PISTE (HP)', danger: '!' },
-        { total: '24.95', part: '6.55', cap: '095°', tulip: 'crest', notes: 'BIG DUNE CREST + DROP\nDANGER 3 - DO NOT JUMP', danger: '!!!' },
-        { total: '31.10', part: '6.15', cap: '154°', tulip: 'waypoint', notes: 'WPM 01 (800m RADIUS)\nJOIN TRACK ON LEFT', danger: '' },
-        { total: '39.60', part: '8.50', cap: '182°', tulip: 'hardLeft', notes: '90° L AT CAIRN / RUIN\nFAST CHOTT / SALT FLAT', danger: '!' },
-        { total: '48.20', part: '8.60', cap: '175°', tulip: 'finish', notes: 'ASS - FINISH SPECIAL\nSPEED ZONE 50 KM/H ->', danger: 'DZ' }
-      ];
-
-      const rowHeight = Math.round(width * 0.34);
-      const headerHeight = Math.round(width * 0.13);
-      const totalHeight = headerHeight + waypoints.length * rowHeight;
-
-      const canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = width * dpr;
-      canvas.height = totalHeight * dpr;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${totalHeight}px`;
-      canvas.className = 'bg-white shadow-xl rounded-sm border-2 border-slate-500';
-
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
-
-      // Background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, totalHeight);
-
-      // Top Roadbook Banner
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, width, headerHeight);
-      ctx.fillStyle = '#f97316';
-      ctx.font = `800 ${Math.round(width * 0.036)}px "Chakra Petch", sans-serif`;
-      ctx.fillText('STAGE 04 • SHUBAYTAH -> HARADH (SS 312 KM)', width * 0.03, headerHeight * 0.62);
-
-      // Column widths: [Distance 22%] [Tulip Box 36%] [Notes & CAP 42%]
-      const col1W = width * 0.23;
-      const col2W = width * 0.35;
-      const col3W = width * 0.42;
-
-      waypoints.forEach((wp, i) => {
-        const y = headerHeight + i * rowHeight;
-
-        // Alternating subtle tint
-        if (i % 2 === 1) {
-          ctx.fillStyle = '#f8fafc';
-          ctx.fillRect(0, y, width, rowHeight);
-        }
-
-        // Danger highlight strip on notes if !!!
-        if (wp.danger === '!!!') {
-          ctx.fillStyle = '#fee2e2';
-          ctx.fillRect(col1W + col2W, y, col3W, rowHeight);
-        } else if (wp.danger === '!!' || wp.danger === '!') {
-          ctx.fillStyle = '#fef9c3';
-          ctx.fillRect(col1W + col2W, y, col3W, rowHeight);
-        }
-
-        // Grid Borders
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, y, width, rowHeight);
-        ctx.beginPath();
-        ctx.moveTo(col1W, y);
-        ctx.lineTo(col1W, y + rowHeight);
-        ctx.moveTo(col1W + col2W, y);
-        ctx.lineTo(col1W + col2W, y + rowHeight);
-        ctx.stroke();
-
-        // Horizontal divider in Distance cell
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, y + rowHeight * 0.56);
-        ctx.lineTo(col1W, y + rowHeight * 0.56);
-        ctx.stroke();
-
-        // Total Distance (Bold)
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `800 ${Math.round(width * 0.052)}px "JetBrains Mono", monospace`;
-        ctx.fillText(wp.total, width * 0.02, y + rowHeight * 0.42);
-
-        // Partial Distance
-        ctx.fillStyle = '#334155';
-        ctx.font = `700 ${Math.round(width * 0.036)}px "JetBrains Mono", monospace`;
-        ctx.fillText(wp.part, width * 0.025, y + rowHeight * 0.86);
-
-        // Box Number Badge
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(col1W, y, width * 0.055, rowHeight * 0.24);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `700 ${Math.round(width * 0.026)}px "JetBrains Mono", monospace`;
-        ctx.fillText(String(i + 1), col1W + width * 0.014, y + rowHeight * 0.17);
-
-        // Draw Tulip Diagram in center cell
-        drawTulipDiagram(ctx, wp.tulip, col1W + col2W / 2, y + rowHeight / 2, Math.min(col2W, rowHeight) * 0.36);
-
-        // CAP Heading Box in Notes column
-        const capBoxW = col3W * 0.42;
-        const capBoxH = rowHeight * 0.28;
-        ctx.fillStyle = '#fef08a';
-        ctx.fillRect(col1W + col2W + 6, y + 6, capBoxW, capBoxH);
-        ctx.strokeStyle = '#0f172a';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(col1W + col2W + 6, y + 6, capBoxW, capBoxH);
-
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `800 ${Math.round(width * 0.036)}px "JetBrains Mono", monospace`;
-        ctx.fillText(`CAP ${wp.cap}`, col1W + col2W + 12, y + 6 + capBoxH * 0.72);
-
-        // Danger Exclamation Badge
-        if (wp.danger) {
-          ctx.fillStyle = wp.danger === '!!!' ? '#dc2626' : '#ea580c';
-          ctx.font = `900 ${Math.round(width * 0.044)}px "Inter", sans-serif`;
-          ctx.fillText(wp.danger, width - width * 0.09, y + 6 + capBoxH * 0.78);
-        }
-
-        // Notes Text
-        ctx.fillStyle = '#0f172a';
-        ctx.font = `700 ${Math.round(width * 0.029)}px "Inter", sans-serif`;
-        const noteLines = wp.notes.split('\n');
-        noteLines.forEach((line, lIdx) => {
-          ctx.fillText(line, col1W + col2W + 8, y + rowHeight * 0.56 + lIdx * (rowHeight * 0.22));
-        });
-      });
-
-      wrapper.appendChild(canvas);
-      if (preserveScroll) {
-        container.scrollTop = prevScroll;
-      }
-    }
-
-    function drawTulipDiagram(ctx, type, cx, cy, r) {
-      ctx.save();
-      ctx.strokeStyle = '#0f172a';
-      ctx.fillStyle = '#0f172a';
-      ctx.lineWidth = 3.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Origin dot at bottom
-      ctx.beginPath();
-      ctx.arc(cx, cy + r * 0.85, 5, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (type === 'start' || type === 'dunes') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy - r * 0.85);
-        ctx.stroke();
-        // Arrowhead
-        ctx.beginPath();
-        ctx.moveTo(cx - 8, cy - r * 0.6);
-        ctx.lineTo(cx, cy - r * 0.88);
-        ctx.lineTo(cx + 8, cy - r * 0.6);
-        ctx.stroke();
-
-        if (type === 'dunes') {
-          ctx.strokeStyle = '#d97706';
-          ctx.lineWidth = 2.5;
-          [-r * 0.35, r * 0.2].forEach(offsetY => {
-            ctx.beginPath();
-            ctx.arc(cx - 14, cy + offsetY, 14, Math.PI * 1.15, Math.PI * 1.85);
-            ctx.arc(cx + 14, cy + offsetY, 14, Math.PI * 1.15, Math.PI * 1.85);
-            ctx.stroke();
-          });
-        }
-      } else if (type === 'forkRight') {
-        // Main fork right
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy);
-        ctx.lineTo(cx + r * 0.7, cy - r * 0.75);
-        ctx.stroke();
-        // Secondary track left dashed
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx - r * 0.6, cy - r * 0.7);
-        ctx.stroke();
-      } else if (type === 'wadi') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy - r * 0.85);
-        ctx.stroke();
-        // Wadi blue waves
-        ctx.strokeStyle = '#0284c7';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.85, cy - 5);
-        ctx.lineTo(cx + r * 0.85, cy - 5);
-        ctx.moveTo(cx - r * 0.85, cy + 6);
-        ctx.lineTo(cx + r * 0.85, cy + 6);
-        ctx.stroke();
-      } else if (type === 'crest') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy - r * 0.85);
-        ctx.stroke();
-        // Red danger crest arch
-        ctx.strokeStyle = '#dc2626';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(cx, cy + 6, r * 0.65, Math.PI * 1.15, Math.PI * 1.85);
-        ctx.stroke();
-      } else if (type === 'waypoint') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy - r * 0.85);
-        ctx.stroke();
-        ctx.strokeStyle = '#ea580c';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (type === 'hardLeft') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy);
-        ctx.lineTo(cx - r * 0.85, cy);
-        ctx.stroke();
-        // Arrowhead left
-        ctx.beginPath();
-        ctx.moveTo(cx - r * 0.6, cy - 7);
-        ctx.lineTo(cx - r * 0.88, cy);
-        ctx.lineTo(cx - r * 0.6, cy + 7);
-        ctx.stroke();
-      } else if (type === 'finish') {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + r * 0.85);
-        ctx.lineTo(cx, cy - r * 0.35);
-        ctx.stroke();
-        // Checkered flag box
-        ctx.strokeRect(cx - 18, cy - r * 0.85, 36, 18);
-        ctx.fillRect(cx - 18, cy - r * 0.85, 12, 9);
-        ctx.fillRect(cx - 6, cy - r * 0.85 + 9, 12, 9);
-        ctx.fillRect(cx + 6, cy - r * 0.85, 12, 9);
-      }
-
-      ctx.restore();
-    }
-
-    // Re-render sample roadbook cleanly on orientation change if using sample
-    window.addEventListener('resize', () => {
-      if (!state.pdfDoc) {
-        loadBuiltInSampleRoadbook(true);
-      }
-    });
-
-    // =========================================================================
-    // SETTINGS MODAL & DISPLAY PREFERENCES
-    // =========================================================================
-    function openSettings() {
-      document.getElementById('settings-modal').classList.remove('hidden');
-    }
-
-    function closeSettings() {
-      document.getElementById('settings-modal').classList.add('hidden');
-    }
-
-    function toggleDarkMode() {
-      setDarkMode(!state.darkMode, true);
-    }
-
-    function setDarkMode(enabled, persist = true) {
-      state.darkMode = enabled;
-      const htmlEl = document.documentElement;
-      const btn = document.getElementById('toggle-dark-btn');
-      const knob = document.getElementById('toggle-dark-knob');
-
-      if (enabled) {
-        htmlEl.classList.add('dark-rally');
-        btn.classList.replace('bg-slate-400', 'bg-orange-600');
-        knob.classList.add('translate-x-6');
-      } else {
-        htmlEl.classList.remove('dark-rally');
-        btn.classList.replace('bg-orange-600', 'bg-slate-400');
-        knob.classList.remove('translate-x-6');
-      }
-      if (persist) savePreferences();
-    }
-
+<!-- ... existing code ... -->
     function setSpeedUnit(unit, persist = true) {
       state.speedUnit = unit;
-      document.getElementById('speed-unit-badge').textContent = unit.toUpperCase();
+      const isMph = unit === 'mph';
+      document.getElementById('speed-unit-badge').textContent = isMph ? 'MPH' : 'KM/H';
+      document.getElementById('trip1-unit-badge').textContent = isMph ? 'MI' : 'KM';
+      document.getElementById('trip2-unit-badge').textContent = isMph ? 'MI' : 'KM';
 
       const kmhBtn = document.getElementById('unit-kmh-btn');
       const mphBtn = document.getElementById('unit-mph-btn');
-      if (unit === 'kmh') {
-        kmhBtn.className = 'px-3 py-1.5 bg-orange-600 text-white';
-        mphBtn.className = 'px-3 py-1.5 bg-transparent';
-      } else {
-        mphBtn.className = 'px-3 py-1.5 bg-orange-600 text-white';
-        kmhBtn.className = 'px-3 py-1.5 bg-transparent';
-      }
-
-      updateTelemetryUI();
-      if (persist) savePreferences();
-    }
-
-    function toggleSightline() {
-      setSightline(!state.showSightline, true);
-    }
-
-    function setSightline(visible, persist = true) {
-      state.showSightline = visible;
-      const overlay = document.getElementById('sightline-overlay');
-      const btn = document.getElementById('toggle-sightline-btn');
-      const knob = document.getElementById('toggle-sightline-knob');
-
-      if (visible) {
-        overlay.classList.remove('hidden');
-        btn.classList.replace('bg-slate-400', 'bg-orange-600');
-        knob.classList.add('translate-x-6');
-      } else {
-        overlay.classList.add('hidden');
-        btn.classList.replace('bg-orange-600', 'bg-slate-400');
-        knob.classList.remove('translate-x-6');
-      }
-      if (persist) savePreferences();
-    }
-
-    function setScrollStep(val, persist = true) {
-      state.scrollStepPx = parseInt(val, 10) || 180;
-      document.getElementById('scroll-step-range').value = state.scrollStepPx;
-      document.getElementById('scroll-step-label').textContent = `${state.scrollStepPx} px`;
-      if (persist) savePreferences();
-    }
-  </script>
-</body>
-</html>
+<!-- ... existing code ... -->
