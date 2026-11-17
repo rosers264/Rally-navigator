@@ -7,10 +7,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Rally Cockpit">
-  
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Dakar Rally Roadbook & Telemetry Cockpit</title>
+  <title>Ross' Trial Nav - Rally Roadbook & Telemetry Cockpit</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -37,6 +37,8 @@
       --digit-cap: #fbbf24;
       --digit-time: #38bdf8;
       --digit-chrono: #4ade80;
+      --digit-trip1: #f8fafc;
+      --digit-trip2: #fb923c;
       --roadbook-bg: #cbd5e1;
       --sightline-color: rgba(239, 68, 68, 0.85);
     }
@@ -54,6 +56,8 @@
       --digit-cap: #facc15;
       --digit-time: #38bdf8;
       --digit-chrono: #22c55e;
+      --digit-trip1: #f8fafc;
+      --digit-trip2: #fb923c;
       --roadbook-bg: #18181b;
       --sightline-color: rgba(249, 115, 22, 0.9);
     }
@@ -120,14 +124,14 @@
     }
 
     /* Landscape layout adaptation for phones/tablets */
-    @media (orientation: landscape) and (max-height: 620px) {
+    @media (orientation: landscape) and (max-height: 680px) {
       #cockpit-root {
         flex-direction: row !important;
       }
       #telemetry-sidebar {
-        width: 340px !important;
-        min-width: 320px !important;
-        max-width: 38vw !important;
+        width: 375px !important;
+        min-width: 340px !important;
+        max-width: 42vw !important;
         height: 100dvh !important;
         border-right: 2px solid var(--border-instrument);
         border-bottom: none !important;
@@ -140,21 +144,23 @@
     }
   </style>
 </head>
-  
+
 <script>
-if ("serviceWorker" in navigator) {
+// Only register the Service Worker when served over standard HTTP/HTTPS origins (prevents blob: URL errors in previews)
+if ("serviceWorker" in navigator && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
   navigator.serviceWorker.register("./sw.js")
-    .then(() => console.log("Service Worker Registered"));
+    .then(() => console.log("Service Worker Registered"))
+    .catch((err) => console.warn("Service Worker registration skipped:", err));
 }
 </script>
-  
+
 <body>
 
   <!-- MAIN RALLY COCKPIT CONTAINER -->
   <div id="cockpit-root" class="flex flex-col w-full h-full overflow-hidden">
 
     <!-- TELEMETRY & CHRONO INSTRUMENT CLUSTER -->
-    <header id="telemetry-sidebar" class="shrink-0 bg-[var(--bg-panel)] border-b-2 border-[var(--border-instrument)] p-2 sm:p-3 flex flex-col gap-2 z-20 shadow-md">
+    <header id="telemetry-sidebar" class="shrink-0 bg-[var(--bg-panel)] border-b-2 border-[var(--border-instrument)] p-2 sm:p-2.5 flex flex-col gap-2 z-20 shadow-md">
 
       <!-- Top Status Strip: Brand, GPS Status Pill, Time, Settings -->
       <div class="flex items-center justify-between gap-2">
@@ -187,48 +193,95 @@ if ("serviceWorker" in navigator) {
       <!-- Primary Telemetry Readouts: SPEED & CAP HEADING -->
       <div class="grid grid-cols-2 gap-2">
         <!-- GPS SPEED -->
-        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 sm:py-2 flex flex-col justify-between relative overflow-hidden">
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 flex flex-col justify-between relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">SPEED</span>
-            <span id="speed-unit-badge" class="text-[11px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-slate-800 text-orange-400">KM/H</span>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">SPEED</span>
+            <span id="speed-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-slate-800 text-orange-400">KM/H</span>
           </div>
-          <div class="flex items-baseline justify-end my-0.5">
-            <span id="gps-speed-display" class="font-instrument text-4xl sm:text-5xl font-extrabold leading-none text-[var(--digit-speed)]">0</span>
+          <div class="flex items-baseline justify-end">
+            <span id="gps-speed-display" class="font-instrument text-3xl sm:text-4xl font-extrabold leading-none text-[var(--digit-speed)]">0</span>
           </div>
         </div>
 
         <!-- GPS HEADING (CAP) -->
-        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 sm:py-2 flex flex-col justify-between relative overflow-hidden">
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-3 py-1.5 flex flex-col justify-between relative overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">CAP / HDG</span>
-            <span id="gps-cardinal-badge" class="text-[11px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">N</span>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">CAP / HDG</span>
+            <span id="gps-cardinal-badge" class="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">N</span>
+          </div>
+          <div class="flex items-baseline justify-end">
+            <span id="gps-heading-display" class="font-instrument text-3xl sm:text-4xl font-extrabold leading-none text-[var(--digit-cap)]">000°</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DUAL RESETTABLE RALLY DISTANCE METERS: TRIP 1 (TOTAL) & TRIP 2 (PARTIAL) -->
+      <div class="grid grid-cols-2 gap-2">
+        <!-- TRIP 1: TOTAL STAGE ODOMETER -->
+        <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl p-2 flex flex-col justify-between gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">TRIP 1 • TOTAL</span>
+            <span id="trip1-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 rounded bg-slate-800 text-sky-400">KM</span>
           </div>
           <div class="flex items-baseline justify-end my-0.5">
-            <span id="gps-heading-display" class="font-instrument text-4xl sm:text-5xl font-extrabold leading-none text-[var(--digit-cap)]">000°</span>
+            <span id="trip1-display" class="font-instrument text-2xl sm:text-3xl font-extrabold leading-none text-[var(--digit-trip1)]">000.00</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1 pt-0.5">
+            <button onclick="adjustTrip(1, -0.01)" aria-label="Trip 1 Minus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              -.01
+            </button>
+            <button onclick="adjustTrip(1, 0.01)" aria-label="Trip 1 Plus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              +.01
+            </button>
+            <button onclick="resetTrip(1)" aria-label="Reset Trip 1 Total" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider py-2 rounded-lg">
+              RST
+            </button>
+          </div>
+        </div>
+
+        <!-- TRIP 2: PARTIAL WAYPOINT ODOMETER -->
+        <div class="bg-[var(--bg-instrument)] border-2 border-orange-500/60 rounded-xl p-2 flex flex-col justify-between gap-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-orange-400">TRIP 2 • PARTIAL</span>
+            <span id="trip2-unit-badge" class="text-[10px] font-extrabold uppercase px-1.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40">KM</span>
+          </div>
+          <div class="flex items-baseline justify-end my-0.5">
+            <span id="trip2-display" class="font-instrument text-2xl sm:text-3xl font-extrabold leading-none text-[var(--digit-trip2)]">000.00</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1 pt-0.5">
+            <button onclick="adjustTrip(2, -0.01)" aria-label="Trip 2 Minus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-orange-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              -.01
+            </button>
+            <button onclick="adjustTrip(2, 0.01)" aria-label="Trip 2 Plus 0.01" class="rally-btn bg-slate-800 hover:bg-slate-700 text-orange-200 border border-slate-600 font-instrument font-extrabold text-xs py-2 rounded-lg">
+              +.01
+            </button>
+            <button onclick="resetTrip(2)" aria-label="Reset Trip 2 Partial" class="rally-btn bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-xs uppercase tracking-wider py-2 rounded-lg">
+              RST
+            </button>
           </div>
         </div>
       </div>
 
       <!-- RESETTABLE STAGE CHRONO / TIMER WITH -1s / +1s -->
-      <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl p-2 flex flex-wrap items-center justify-between gap-2">
+      <div class="bg-[var(--bg-instrument)] border-2 border-[var(--border-instrument)] rounded-xl px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2">
         <!-- Timer Display -->
-        <div class="flex flex-col pl-1">
+        <div class="flex flex-col pl-0.5">
           <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">STAGE CHRONO</span>
-          <span id="chrono-display" class="font-instrument text-2xl sm:text-3xl font-extrabold text-[var(--digit-chrono)] leading-tight">00:00:00</span>
+          <span id="chrono-display" class="font-instrument text-xl sm:text-2xl font-extrabold text-[var(--digit-chrono)] leading-tight">00:00:00</span>
         </div>
 
         <!-- Chrono Controls: -1s, +1s, Start/Pause, Reset -->
-        <div class="flex items-center gap-1.5 sm:gap-2 ml-auto">
-          <button onclick="adjustChrono(-1)" aria-label="Subtract 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-sm sm:text-base px-2.5 py-2.5 rounded-lg min-w-[46px]">
+        <div class="flex items-center gap-1.5 ml-auto">
+          <button onclick="adjustChrono(-1)" aria-label="Subtract 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-xs sm:text-sm px-2.5 py-2 rounded-lg min-w-[42px]">
             -1s
           </button>
-          <button onclick="adjustChrono(1)" aria-label="Add 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-sm sm:text-base px-2.5 py-2.5 rounded-lg min-w-[46px]">
+          <button onclick="adjustChrono(1)" aria-label="Add 1 Second" class="rally-btn bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-300 border border-slate-600 font-instrument font-extrabold text-xs sm:text-sm px-2.5 py-2 rounded-lg min-w-[42px]">
             +1s
           </button>
-          <button id="chrono-toggle-btn" onclick="toggleChrono()" class="rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]">
+          <button id="chrono-toggle-btn" onclick="toggleChrono()" class="rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg min-w-[62px]">
             START
           </button>
-          <button onclick="resetChrono()" aria-label="Reset Timer" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-2.5 py-2.5 rounded-lg">
+          <button onclick="resetChrono()" aria-label="Reset Timer" class="rally-btn bg-rose-700 hover:bg-rose-600 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg">
             RST
           </button>
         </div>
@@ -349,7 +402,7 @@ if ("serviceWorker" in navigator) {
               <span class="font-bold">Internal GNSS Receiver</span>
               <span id="internal-gps-state" class="text-xs font-instrument px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>
             </div>
-            <p class="text-xs text-[var(--text-muted)]">Uses device high-accuracy GPS (`watchPosition`) for live ground speed, true heading (CAP), and UTC sync.</p>
+            <p class="text-xs text-[var(--text-muted)]">Uses device high-accuracy GPS (`watchPosition`) for live ground speed, true heading (CAP), distance odometers, and UTC sync.</p>
           </div>
 
           <!-- External Serial Port GPS Box -->
@@ -386,7 +439,7 @@ if ("serviceWorker" in navigator) {
               <span class="font-bold">Simulated Desert Rally Stage</span>
               <span class="text-xs font-instrument px-2 py-0.5 rounded bg-amber-500/20 text-amber-500 font-bold">SIMULATING</span>
             </div>
-            <p class="text-xs text-[var(--text-muted)]">Generates realistic variable rally speeds (45–138 km/h), dune CAP headings, and live GPS clock ticks for indoor testing.</p>
+            <p class="text-xs text-[var(--text-muted)]">Generates realistic variable rally speeds (55–134 km/h), dune CAP headings, live distance meter accumulation, and GPS clock ticks.</p>
           </div>
         </section>
 
@@ -431,11 +484,11 @@ if ("serviceWorker" in navigator) {
               </button>
             </div>
 
-            <!-- Speed Units Toggle -->
+            <!-- Speed & Distance Units Toggle -->
             <div class="flex items-center justify-between pt-2 border-t border-slate-300 dark:border-slate-800">
               <div>
-                <div class="font-bold">Speed Units</div>
-                <div class="text-xs text-[var(--text-muted)]">Metric (KM/H) or Imperial (MPH)</div>
+                <div class="font-bold">Speed & Distance Units</div>
+                <div class="text-xs text-[var(--text-muted)]">Metric (KM/H, KM) or Imperial (MPH, MI)</div>
               </div>
               <div class="flex rounded-lg overflow-hidden border border-slate-400 dark:border-slate-700 font-instrument font-bold text-xs">
                 <button id="unit-kmh-btn" onclick="setSpeedUnit('kmh')" class="px-3 py-1.5 bg-orange-600 text-white">KM/H</button>
@@ -492,6 +545,12 @@ if ("serviceWorker" in navigator) {
       gpsTimeStr: '00:00:00',
       hasGpsFix: false,
 
+      // Dual Resettable Distance Meters (stored internally in kilometers)
+      trip1Km: 0,
+      trip2Km: 0,
+      lastFixLat: null,
+      lastFixLon: null,
+
       // Chrono Timer values
       chronoSeconds: 0,
       chronoRunning: false,
@@ -508,6 +567,7 @@ if ("serviceWorker" in navigator) {
       // Demo simulation timer
       demoIntervalId: null,
       demoPhase: 0,
+      demoLastTickMs: null,
 
       // PDF Roadbook state
       pdfDoc: null,
@@ -525,6 +585,7 @@ if ("serviceWorker" in navigator) {
       setupScrollHoldButtons();
       setupScrollPageTracker();
       startClockFallbackLoop();
+      updateTelemetryUI();
       setGpsSource(state.gpsSource, true);
       loadBuiltInSampleRoadbook();
     });
@@ -536,6 +597,8 @@ if ("serviceWorker" in navigator) {
         if (saved.speedUnit) setSpeedUnit(saved.speedUnit, false);
         if (typeof saved.showSightline === 'boolean') setSightline(saved.showSightline, false);
         if (saved.scrollStepPx) setScrollStep(saved.scrollStepPx, false);
+        if (typeof saved.trip1Km === 'number' && !isNaN(saved.trip1Km)) state.trip1Km = Math.max(0, saved.trip1Km);
+        if (typeof saved.trip2Km === 'number' && !isNaN(saved.trip2Km)) state.trip2Km = Math.max(0, saved.trip2Km);
         if (saved.gpsSource && saved.gpsSource !== 'serial') {
           state.gpsSource = saved.gpsSource;
         }
@@ -551,6 +614,8 @@ if ("serviceWorker" in navigator) {
           speedUnit: state.speedUnit,
           showSightline: state.showSightline,
           scrollStepPx: state.scrollStepPx,
+          trip1Km: state.trip1Km,
+          trip2Km: state.trip2Km,
           gpsSource: state.gpsSource === 'serial' ? 'internal' : state.gpsSource
         }));
       } catch (e) {
@@ -570,14 +635,88 @@ if ("serviceWorker" in navigator) {
     }
 
     // =========================================================================
+    // DISTANCE METERS (TRIP 1 TOTAL & TRIP 2 PARTIAL) + HAVERSINE INTEGRATION
+    // =========================================================================
+    function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371.0088; // Mean Earth radius in km
+      const toRad = (deg) => (deg * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Format distance to 2 decimal places with leading zeros on integer part (e.g., 000.00)
+    function formatTripDistance(value) {
+      const safeVal = Math.max(0, Number.isFinite(value) ? value : 0);
+      const [intPart, decPart] = safeVal.toFixed(2).split('.');
+      return `${intPart.padStart(3, '0')}.${decPart}`;
+    }
+
+    // Integrate new GNSS coordinates into Trip 1 and Trip 2
+    function recordGpsCoordinate(lat, lon, accuracyMeters = 10) {
+      if (typeof lat !== 'number' || typeof lon !== 'number' || isNaN(lat) || isNaN(lon)) return;
+
+      if (state.lastFixLat !== null && state.lastFixLon !== null) {
+        const deltaKm = haversineDistanceKm(state.lastFixLat, state.lastFixLon, lat, lon);
+        // Filter out stationary GPS jitter (< 2 meters) and unrealistic single-tick teleport spikes (> 2 km)
+        const minJitterKm = Math.max(0.002, (accuracyMeters || 5) * 0.00025);
+        if (deltaKm >= minJitterKm && deltaKm < 2.0) {
+          state.trip1Km += deltaKm;
+          state.trip2Km += deltaKm;
+          savePreferences();
+        }
+      }
+
+      state.lastFixLat = lat;
+      state.lastFixLon = lon;
+    }
+
+    // Manual +/- 0.01 (in active display units: KM or MI) for roadbook odometer calibration
+    function adjustTrip(tripNumber, deltaDisplayUnit) {
+      const factorToKm = state.speedUnit === 'mph' ? 1.609344 : 1.0;
+      const deltaKm = deltaDisplayUnit * factorToKm;
+      if (tripNumber === 1) {
+        state.trip1Km = Math.max(0, state.trip1Km + deltaKm);
+      } else {
+        state.trip2Km = Math.max(0, state.trip2Km + deltaKm);
+      }
+      savePreferences();
+      updateTelemetryUI();
+    }
+
+    function resetTrip(tripNumber) {
+      if (tripNumber === 1) {
+        state.trip1Km = 0;
+        showToast('Trip 1 (Total) reset to 000.00');
+      } else {
+        state.trip2Km = 0;
+        showToast('Trip 2 (Partial) reset to 000.00');
+      }
+      savePreferences();
+      updateTelemetryUI();
+    }
+
+    // =========================================================================
     // TELEMETRY DISPLAY UPDATERS
     // =========================================================================
     function updateTelemetryUI() {
+      const isMph = state.speedUnit === 'mph';
+
       // Speed conversion
-      const displaySpeed = state.speedUnit === 'mph'
+      const displaySpeed = isMph
         ? Math.round(state.speedKmh * 0.621371)
         : Math.round(state.speedKmh);
       document.getElementById('gps-speed-display').textContent = displaySpeed;
+
+      // Trip 1 (Total) & Trip 2 (Partial) conversion
+      const distFactor = isMph ? 0.621371 : 1.0;
+      document.getElementById('trip1-display').textContent = formatTripDistance(state.trip1Km * distFactor);
+      document.getElementById('trip2-display').textContent = formatTripDistance(state.trip2Km * distFactor);
 
       // Heading (CAP) formatted as 000° - 359°
       const normHeading = ((Math.round(state.headingDeg) % 360) + 360) % 360;
@@ -625,6 +764,8 @@ if ("serviceWorker" in navigator) {
 
       state.gpsSource = source;
       state.hasGpsFix = false;
+      state.lastFixLat = null;
+      state.lastFixLon = null;
       savePreferences();
 
       // Update Settings Modal Tabs
@@ -667,6 +808,9 @@ if ("serviceWorker" in navigator) {
         (pos) => {
           state.hasGpsFix = true;
           const coords = pos.coords;
+
+          // Integrate Haversine distance for Trip 1 & Trip 2
+          recordGpsCoordinate(coords.latitude, coords.longitude, coords.accuracy);
 
           // Speed in m/s -> km/h
           if (typeof coords.speed === 'number' && !isNaN(coords.speed) && coords.speed >= 0) {
@@ -722,6 +866,8 @@ if ("serviceWorker" in navigator) {
 
         state.serialPort = port;
         state.serialKeepReading = true;
+        state.lastFixLat = null;
+        state.lastFixLon = null;
 
         document.getElementById('serial-connect-btn').classList.add('hidden');
         document.getElementById('serial-disconnect-btn').classList.remove('hidden');
@@ -788,6 +934,18 @@ if ("serviceWorker" in navigator) {
       }
     }
 
+    // Convert NMEA ddmm.mmmm coordinate to decimal degrees
+    function parseNmeaCoord(rawVal, hemi) {
+      if (!rawVal || !hemi) return null;
+      const val = parseFloat(rawVal);
+      if (isNaN(val)) return null;
+      const degrees = Math.floor(val / 100);
+      const minutes = val - degrees * 100;
+      let decimal = degrees + minutes / 60;
+      if (hemi === 'S' || hemi === 'W') decimal = -decimal;
+      return decimal;
+    }
+
     // Parse standard $GPRMC / $GNRMC and $GPVTG / $GNVTG NMEA sentences
     function parseNmeaSentence(sentence) {
       document.getElementById('nmea-debug-line').textContent = sentence;
@@ -795,7 +953,7 @@ if ("serviceWorker" in navigator) {
       const type = parts[0];
 
       // $GPRMC or $GNRMC: Recommended Minimum Specific GNSS Data
-      // [1]=UTC hhmmss.ss, [2]=Status A/V, [7]=Speed in knots, [8]=Track angle deg
+      // [1]=UTC hhmmss.ss, [2]=Status A/V, [3]=Lat, [4]=N/S, [5]=Lon, [6]=E/W, [7]=Speed knots, [8]=Track deg
       if (type.endsWith('RMC') && parts.length >= 9) {
         const utcRaw = parts[1];
         if (utcRaw && utcRaw.length >= 6) {
@@ -803,6 +961,12 @@ if ("serviceWorker" in navigator) {
         }
         if (parts[2] === 'A') {
           state.hasGpsFix = true;
+          const lat = parseNmeaCoord(parts[3], parts[4]);
+          const lon = parseNmeaCoord(parts[5], parts[6]);
+          if (lat !== null && lon !== null) {
+            recordGpsCoordinate(lat, lon, 5);
+          }
+
           const knots = parseFloat(parts[7]);
           if (!isNaN(knots)) state.speedKmh = knots * 1.852;
           const course = parseFloat(parts[8]);
@@ -827,11 +991,22 @@ if ("serviceWorker" in navigator) {
     // --- 3. Simulated Rally Telemetry Mode ---
     function startDemoGps() {
       updateGpsStatusBadge('DEMO SIM', 'bg-amber-400');
+      state.demoLastTickMs = performance.now();
       state.demoIntervalId = setInterval(() => {
+        const nowMs = performance.now();
+        const dtHours = Math.max(0, (nowMs - state.demoLastTickMs) / 3600000);
+        state.demoLastTickMs = nowMs;
+
         state.demoPhase += 0.12;
         state.hasGpsFix = true;
         // Realistic desert piste speed between 55 and 134 km/h
         state.speedKmh = 94 + Math.sin(state.demoPhase * 0.7) * 32 + Math.cos(state.demoPhase * 1.9) * 8;
+
+        // Integrate simulated distance into both Trip 1 & Trip 2
+        const deltaKm = state.speedKmh * dtHours;
+        state.trip1Km += deltaKm;
+        state.trip2Km += deltaKm;
+
         // Sweeping dune CAP heading around 142° (SE)
         state.headingDeg = (142 + Math.sin(state.demoPhase * 0.45) * 38 + 360) % 360;
         const now = new Date();
@@ -845,6 +1020,8 @@ if ("serviceWorker" in navigator) {
         clearInterval(state.demoIntervalId);
         state.demoIntervalId = null;
       }
+      state.demoLastTickMs = null;
+      savePreferences();
     }
 
     // =========================================================================
@@ -869,11 +1046,11 @@ if ("serviceWorker" in navigator) {
         state.chronoIntervalId = null;
         state.chronoRunning = false;
         btn.textContent = 'START';
-        btn.className = 'rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]';
+        btn.className = 'rally-btn bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg min-w-[62px]';
       } else {
         state.chronoRunning = true;
         btn.textContent = 'PAUSE';
-        btn.className = 'rally-btn bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider px-3 py-2.5 rounded-lg min-w-[68px]';
+        btn.className = 'rally-btn bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs uppercase tracking-wider px-2.5 py-2 rounded-lg min-w-[62px]';
         state.chronoIntervalId = setInterval(() => {
           state.chronoSeconds += 1;
           renderChrono();
@@ -1113,7 +1290,7 @@ if ("serviceWorker" in navigator) {
       ctx.font = `800 ${Math.round(width * 0.036)}px "Chakra Petch", sans-serif`;
       ctx.fillText('STAGE 04 • SHUBAYTAH -> HARADH (SS 312 KM)', width * 0.03, headerHeight * 0.62);
 
-      // Column widths: [Distance 22%] [Tulip Box 36%] [Notes & CAP 42%]
+      // Column widths: [Distance 23%] [Tulip Box 35%] [Notes & CAP 42%]
       const col1W = width * 0.23;
       const col2W = width * 0.35;
       const col3W = width * 0.42;
@@ -1362,7 +1539,10 @@ if ("serviceWorker" in navigator) {
 
     function setSpeedUnit(unit, persist = true) {
       state.speedUnit = unit;
-      document.getElementById('speed-unit-badge').textContent = unit.toUpperCase();
+      const isMph = unit === 'mph';
+      document.getElementById('speed-unit-badge').textContent = isMph ? 'MPH' : 'KM/H';
+      document.getElementById('trip1-unit-badge').textContent = isMph ? 'MI' : 'KM';
+      document.getElementById('trip2-unit-badge').textContent = isMph ? 'MI' : 'KM';
 
       const kmhBtn = document.getElementById('unit-kmh-btn');
       const mphBtn = document.getElementById('unit-mph-btn');
